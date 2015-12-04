@@ -7,12 +7,12 @@ import pygame.midi as midi
 MIN_TIME_FOR_CHORD = 100  # ms
 
 
-class Event(object):
+class Event():
     NOTE_ON = 144
     NOTE_OFF = 128
 
 
-class Note(object):
+class Note():
     C = 0
     Csharp = Dflat = 1
     D = 2
@@ -25,6 +25,12 @@ class Note(object):
     A = 9
     Asharp = Bflat = 10
     B = 11
+
+    _lookup_list = ["C", "Csharp", "D", "Dsharp", "E", "F", "Fsharp", "G", "Gsharp", "A", "Asharp", "B"]
+
+    @classmethod
+    def note_from_index(cls, index):
+        return cls._lookup_list[index]
 
 
 class TerminateOnSuccess(Exception):
@@ -134,7 +140,11 @@ class KeyBoard():
                 if pitches:
                     # print "pitches: %s" % pitches
                     self._match_melodies(pitches)
-            del self.pitches[pitch]
+                    self._chord_callback(pitches)
+            if pitch in self.pitches:
+                del self.pitches[pitch]
+        else:
+            self._process_other_events(bytes, time)
 
     def _filter_chords(self, pitches, current_pitch, current_time):
         """
@@ -168,6 +178,18 @@ class KeyBoard():
         for melody in self.melodies:
             melody.match_pitch(pitches)
 
+    def _chord_callback(self, pitches):
+        """
+        Callback that can overridden by subclass to do something with a complete chord/pitch
+        """
+        pass
+
+    def _process_other_events(self, bytes, time):
+        """
+        Handler for MIDI events other than NOTE-ON and NOTE-OFF that can be overriden by subclass
+        """
+        pass
+
 
 def main():
     pygame.init()
@@ -182,7 +204,7 @@ def main():
     melodies = []
 
     # Gary Jules - Mad World
-    melody = [Note.Gsharp, Note.C, Note.G, Note.Gsharp, Note.F, Note.G, Note.Dsharp, Note.D]
+    melody = [Note.Gsharp, Note.C, Note.G, Note.Gsharp, Note.F, Note.G, Note.Dsharp, Note.D, Note.Gsharp, Note.C, Note.G, Note.Gsharp, Note.F, Note.G, Note.Gsharp, Note.Asharp]
     melodies.append(
         PrintMelody(melody, name="Mad World")
     )
